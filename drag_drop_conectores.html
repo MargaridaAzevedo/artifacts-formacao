@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Segoe UI',sans-serif; background:linear-gradient(135deg,#f0f4ff,#fdf4ff); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+.card { background:#fff; border-radius:22px; box-shadow:0 8px 36px rgba(99,102,241,.12); max-width:620px; width:100%; padding:36px; }
+h1 { font-size:1.25rem; color:#4f46e5; margin-bottom:4px; }
+.sub { font-size:.85rem; color:#94a3b8; margin-bottom:24px; }
+.banco { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:28px; padding:16px; background:#f8fafc; border-radius:14px; border:2px dashed #c7d2fe; min-height:54px; }
+.chip { background:#4f46e5; color:#fff; border-radius:20px; padding:7px 18px; font-size:.9rem; font-weight:600; cursor:grab; user-select:none; transition:all .2s; box-shadow:0 2px 8px rgba(79,70,229,.25); }
+.chip:active { cursor:grabbing; transform:scale(1.07); }
+.chip.usado { opacity:0; pointer-events:none; }
+.frase-wrap { margin-bottom:16px; }
+.frase { font-size:1rem; color:#1e293b; line-height:2; display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
+.lacuna { display:inline-flex; align-items:center; justify-content:center; min-width:110px; height:34px; border-radius:10px; border:2px dashed #a5b4fc; background:#f0f4ff; padding:0 10px; font-weight:700; font-size:.88rem; color:#4f46e5; transition:all .25s; cursor:default; }
+.lacuna.over { background:#e0e7ff; border-color:#6366f1; transform:scale(1.04); }
+.lacuna.certa { background:#f0fdf4; border-color:#16a34a; color:#15803d; border-style:solid; }
+.lacuna.errada { background:#fef2f2; border-color:#dc2626; color:#dc2626; border-style:solid; animation: shake .3s; }
+.lacuna.mostrar-resposta { background:#fef9c3; border-color:#ca8a04; color:#92400e; border-style:solid; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+.rodape { display:flex; gap:12px; margin-top:24px; align-items:center; flex-wrap:wrap; }
+.btn { border:none; border-radius:12px; padding:10px 22px; font-size:.9rem; font-weight:600; cursor:pointer; transition:all .2s; }
+.btn-reset { background:#f1f5f9; color:#475569; }
+.btn-reset:hover { background:#e2e8f0; }
+.btn-ver { background:#4f46e5; color:#fff; }
+.btn-ver:hover { background:#4338ca; }
+.pontos { margin-left:auto; font-size:.9rem; font-weight:700; color:#4f46e5; }
+.resultado { text-align:center; padding:16px; background:#f0f4ff; border-radius:14px; margin-top:20px; display:none; }
+.resultado .emoji { font-size:2.2rem; }
+.resultado p { color:#4f46e5; font-weight:700; margin-top:6px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🔗 Conectores Discursivos</h1>
+  <div class="sub">Arrasta o conector correto para cada lacuna</div>
+
+  <div class="banco" id="banco"></div>
+
+  <div id="frases"></div>
+
+  <div class="rodape">
+    <button class="btn btn-reset" onclick="reiniciar()">🔄 Recomeçar</button>
+    <button class="btn btn-ver" onclick="verRespostas()">💡 Ver respostas</button>
+    <span class="pontos" id="pts"></span>
+  </div>
+  <div class="resultado" id="resultado">
+    <div class="emoji" id="res-emoji"></div>
+    <p id="res-txt"></p>
+  </div>
+</div>
+
+<script>
+const dados = [
+  { antes:"Estudei muito para o teste;", conector:"portanto", depois:"tive uma boa nota." },
+  { antes:"Gostava de ir ao cinema;", conector:"contudo", depois:"não tinha dinheiro suficiente." },
+  { antes:"Portugal tem belas praias.", conector:"além disso", depois:"possui um rico património histórico." },
+  { antes:"O texto estava confuso.", conector:"por exemplo", depois:"havia parágrafos sem ideia principal." },
+  { antes:"O livro era longo e difícil.", conector:"em suma", depois:"foi uma leitura enriquecedora." },
+];
+
+const conectores = dados.map(d=>d.conector).sort(()=>Math.random()-.5);
+let respostas = Array(dados.length).fill(null);
+let dragging = null;
+
+function render() {
+  // Banco
+  const banco = document.getElementById('banco');
+  banco.innerHTML = '';
+  conectores.forEach((c,i) => {
+    const usado = respostas.includes(c);
+    const el = document.createElement('span');
+    el.className = 'chip' + (usado?' usado':'');
+    el.textContent = c; el.dataset.c = c;
+    el.draggable = true;
+    el.addEventListener('dragstart', e => { dragging = c; el.style.opacity='.5'; });
+    el.addEventListener('dragend', e => { el.style.opacity=''; dragging=null; });
+    banco.appendChild(el);
+  });
+
+  // Frases
+  const cont = document.getElementById('frases');
+  cont.innerHTML = '';
+  dados.forEach((d,i) => {
+    const div = document.createElement('div');
+    div.className = 'frase-wrap';
+    const frase = document.createElement('div');
+    frase.className = 'frase';
+
+    const ant = document.createElement('span'); ant.textContent = d.antes;
+    const lac = document.createElement('span');
+    lac.className = 'lacuna';
+    lac.dataset.i = i;
+    lac.textContent = respostas[i] || '  ___  ';
+
+    if (respostas[i]) {
+      lac.classList.add(respostas[i]===d.conector?'certa':'errada');
+    }
+
+    lac.addEventListener('dragover', e => { e.preventDefault(); lac.classList.add('over'); });
+    lac.addEventListener('dragleave', () => lac.classList.remove('over'));
+    lac.addEventListener('drop', e => {
+      e.preventDefault(); lac.classList.remove('over');
+      if (!dragging) return;
+      // Devolver anterior se havia
+      if (respostas[i]) { /* já estava preenchido, substituir */ }
+      respostas[i] = dragging;
+      dragging = null;
+      atualizar();
+    });
+
+    // Touch / click para mobile
+    lac.addEventListener('click', () => {
+      if (respostas[i]) { respostas[i]=null; atualizar(); }
+    });
+
+    const dep = document.createElement('span'); dep.textContent = d.depois;
+    frase.appendChild(ant); frase.appendChild(lac); frase.appendChild(dep);
+    div.appendChild(frase); cont.appendChild(div);
+  });
+
+  // Pontos
+  const certas = respostas.filter((r,i)=>r===dados[i].conector).length;
+  const preench = respostas.filter(r=>r!==null).length;
+  document.getElementById('pts').textContent = preench ? `${certas}/${preench} corretas` : '';
+
+  // Resultado final
+  if (respostas.every(r=>r!==null)) {
+    const res = document.getElementById('resultado');
+    res.style.display='block';
+    const total = respostas.filter((r,i)=>r===dados[i].conector).length;
+    document.getElementById('res-emoji').textContent = total===5?'🎉':total>=3?'👍':'💪';
+    document.getElementById('res-txt').textContent =
+      total===5 ? 'Perfeito! Dominaste os conectores!' :
+      total>=3 ? `${total}/5 corretas — muito bem! Clica numa lacuna para corrigir.` :
+      `${total}/5 corretas — continua a tentar!`;
+  } else {
+    document.getElementById('resultado').style.display='none';
+  }
+}
+
+function atualizar() { render(); }
+
+function reiniciar() { respostas=Array(dados.length).fill(null); render(); }
+
+function verRespostas() {
+  dados.forEach((d,i)=>{ respostas[i]=d.conector; });
+  render();
+  document.querySelectorAll('.lacuna').forEach((l,i)=>{ l.classList.remove('certa','errada'); l.classList.add('mostrar-resposta'); });
+}
+
+render();
+</script>
+</body>
+</html>

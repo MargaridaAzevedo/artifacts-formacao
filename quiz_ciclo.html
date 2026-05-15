@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg,#e0f2fe,#f0fdf4); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.card { background: #fff; border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,.1); max-width: 560px; width: 100%; padding: 32px; }
+h1 { font-size: 1.3rem; color: #0369a1; margin-bottom: 6px; }
+.progresso { font-size:.85rem; color:#64748b; margin-bottom:18px; }
+.barra-wrap { background:#e2e8f0; border-radius:99px; height:8px; margin-bottom:24px; }
+.barra { background: linear-gradient(90deg,#0ea5e9,#6366f1); border-radius:99px; height:8px; transition: width .4s; }
+.pergunta { font-size: 1.05rem; font-weight: 600; color: #1e293b; margin-bottom: 20px; line-height: 1.5; }
+.opcoes { display: flex; flex-direction: column; gap: 10px; }
+.opcao { border: 2px solid #e2e8f0; border-radius: 12px; padding: 13px 16px; cursor: pointer; transition: all .2s; font-size:.95rem; color:#334155; background:#f8fafc; display:flex; align-items:center; gap:10px; }
+.opcao:hover:not(.bloqueada) { border-color: #0ea5e9; background: #f0f9ff; }
+.opcao.certa { border-color:#16a34a; background:#f0fdf4; color:#15803d; font-weight:600; }
+.opcao.errada { border-color:#dc2626; background:#fef2f2; color:#b91c1c; }
+.opcao.bloqueada { cursor: default; }
+.badge { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:700; flex-shrink:0; background:#e2e8f0; color:#64748b; }
+.certa .badge { background:#16a34a; color:#fff; }
+.errada .badge { background:#dc2626; color:#fff; }
+.feedback { border-radius:12px; padding:12px 16px; margin-top:16px; font-size:.9rem; line-height:1.5; display:none; }
+.feedback.ok { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
+.feedback.nao { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
+.btn-next { margin-top:18px; background:#0ea5e9; color:#fff; border:none; border-radius:12px; padding:12px 28px; font-size:1rem; font-weight:600; cursor:pointer; width:100%; transition: background .2s; display:none; }
+.btn-next:hover { background:#0284c7; }
+.pontuacao { text-align:center; }
+.score-num { font-size:3rem; font-weight:800; color:#0369a1; }
+.score-label { color:#64748b; font-size:1rem; margin-bottom:20px; }
+.estrelas { font-size:2.5rem; margin:10px 0; }
+.btn-reset { background: linear-gradient(90deg,#0ea5e9,#6366f1); color:#fff; border:none; border-radius:12px; padding:12px 28px; font-size:1rem; font-weight:600; cursor:pointer; transition: opacity .2s; }
+.btn-reset:hover { opacity:.85; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div id="quiz-area">
+    <h1>🌊 Ciclo da Água</h1>
+    <div class="progresso" id="prog-txt">Pergunta 1 de 5</div>
+    <div class="barra-wrap"><div class="barra" id="barra" style="width:20%"></div></div>
+    <div class="pergunta" id="perg"></div>
+    <div class="opcoes" id="opcoes"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="btn-next" id="btn-next" onclick="proxima()">Próxima pergunta →</button>
+  </div>
+  <div id="result-area" class="pontuacao" style="display:none">
+    <div class="estrelas" id="estrelas"></div>
+    <div class="score-num" id="score-num"></div>
+    <div class="score-label" id="score-label"></div>
+    <button class="btn-reset" onclick="reiniciar()">🔄 Tentar de novo</button>
+  </div>
+</div>
+<script>
+const perguntas = [
+  { p: "Como se chama o processo pelo qual a água líquida se transforma em vapor de água?",
+    ops: ["Condensação","Precipitação","Evaporação","Infiltração"], c: 2,
+    exp: "✅ A evaporação ocorre quando o sol aquece a água dos oceanos, rios e lagos, transformando-a em vapor que sobe para a atmosfera." },
+  { p: "Quando o vapor de água arrefece na atmosfera e forma gotículas, formando as nuvens, chamamos a esse processo…",
+    ops: ["Evaporação","Condensação","Transpiração","Precipitação"], c: 1,
+    exp: "✅ A condensação acontece quando o vapor sobe, arrefece e as gotículas se agrupam formando nuvens." },
+  { p: "Que nome se dá à água que cai das nuvens sob a forma de chuva, neve ou granizo?",
+    ops: ["Infiltração","Evaporação","Precipitação","Escorrência"], c: 2,
+    exp: "✅ A precipitação inclui todas as formas de água que caem das nuvens: chuva, neve, granizo ou aguaceiro." },
+  { p: "Quando a água da chuva penetra no solo e abastece os lençóis freáticos, esse processo chama-se…",
+    ops: ["Precipitação","Condensação","Evaporação","Infiltração"], c: 3,
+    exp: "✅ A infiltração é a entrada da água no solo. Ela alimenta os lençóis freáticos e depois regressa aos rios e ao mar." },
+  { p: "Qual destes fatores NÃO influencia diretamente o ciclo da água?",
+    ops: ["A temperatura do ar","A luz solar","A gravidade","A composição química das rochas"], c: 3,
+    exp: "✅ A temperatura, a luz solar e a gravidade são fundamentais para o ciclo da água. A composição química das rochas influencia outros processos geológicos, mas não o ciclo hidrológico diretamente." }
+];
+
+let atual = 0, pontos = 0, resp = false;
+
+function render() {
+  const q = perguntas[atual];
+  document.getElementById('perg').textContent = q.p;
+  document.getElementById('prog-txt').textContent = `Pergunta ${atual+1} de ${perguntas.length}`;
+  document.getElementById('barra').style.width = `${((atual+1)/perguntas.length)*100}%`;
+  document.getElementById('feedback').style.display='none';
+  document.getElementById('btn-next').style.display='none';
+  resp = false;
+  const oc = document.getElementById('opcoes');
+  oc.innerHTML='';
+  const letras=['A','B','C','D'];
+  q.ops.forEach((op,i)=>{
+    const d=document.createElement('div');
+    d.className='opcao'; d.dataset.i=i;
+    d.innerHTML=`<span class="badge">${letras[i]}</span>${op}`;
+    d.onclick=()=>responder(i);
+    oc.appendChild(d);
+  });
+}
+
+function responder(i) {
+  if(resp) return;
+  resp=true;
+  const q=perguntas[atual];
+  const divs=document.querySelectorAll('.opcao');
+  divs.forEach(d=>{
+    d.classList.add('bloqueada');
+    const idx=parseInt(d.dataset.i);
+    if(idx===q.c){d.classList.add('certa'); d.querySelector('.badge').textContent='✓';}
+    else if(idx===i && i!==q.c){d.classList.add('errada'); d.querySelector('.badge').textContent='✗';}
+  });
+  const fb=document.getElementById('feedback');
+  if(i===q.c){pontos++; fb.className='feedback ok'; fb.textContent=q.exp;}
+  else{fb.className='feedback nao'; fb.textContent='❌ Não foi dessa vez. '+q.exp;}
+  fb.style.display='block';
+  document.getElementById('btn-next').style.display='block';
+  document.getElementById('btn-next').textContent = atual<perguntas.length-1 ? 'Próxima pergunta →' : 'Ver resultado 🎯';
+}
+
+function proxima() {
+  atual++;
+  if(atual<perguntas.length){ render(); }
+  else { mostrarResult(); }
+}
+
+function mostrarResult() {
+  document.getElementById('quiz-area').style.display='none';
+  document.getElementById('result-area').style.display='block';
+  document.getElementById('score-num').textContent=`${pontos}/${perguntas.length}`;
+  const pct=pontos/perguntas.length;
+  let est='', label='';
+  if(pct===1){est='⭐⭐⭐'; label='Perfeito! És um expert no ciclo da água!';}
+  else if(pct>=.6){est='⭐⭐'; label='Muito bem! Ainda há pequenos detalhes a rever.';}
+  else{est='⭐'; label='Continua a estudar — és capaz de melhorar!';}
+  document.getElementById('estrelas').textContent=est;
+  document.getElementById('score-label').textContent=label;
+}
+
+function reiniciar(){
+  atual=0; pontos=0;
+  document.getElementById('quiz-area').style.display='block';
+  document.getElementById('result-area').style.display='none';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

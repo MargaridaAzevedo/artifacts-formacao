@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ciclo da Água</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #e8f4fd; overflow: hidden; }
+  canvas { display: block; }
+  #ui { position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 12px; z-index: 10; }
+  button { padding: 8px 22px; border: none; border-radius: 20px; font-size: 14px;
+    font-weight: 600; cursor: pointer; transition: all .2s; }
+  #btnPausa { background: #2563eb; color: #fff; }
+  #btnPausa:hover { background: #1d4ed8; }
+  #infoBox { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    background: rgba(255,255,255,.92); border-radius: 14px; padding: 10px 22px;
+    font-size: 15px; font-weight: 600; color: #1e3a5f; box-shadow: 0 2px 12px rgba(0,0,0,.12);
+    transition: opacity .4s; min-width: 260px; text-align: center; }
+  #fase { color: #2563eb; }
+</style>
+</head>
+<body>
+<div id="ui">
+  <button id="btnPausa">⏸ Pausar</button>
+</div>
+<canvas id="c"></canvas>
+<div id="infoBox"><span id="fase">Evaporação</span><br><span id="desc">O sol aquece a água dos oceanos e rios, transformando-a em vapor de água.</span></div>
+
+<script>
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+let W, H, paused = false, t = 0;
+
+const fases = [
+  { nome: 'Evaporação', desc: 'O sol aquece a água dos oceanos e rios, transformando-a em vapor de água.', cor: '#f59e0b' },
+  { nome: 'Condensação', desc: 'O vapor de água sobe, arrefece e forma gotículas que criam as nuvens.', cor: '#6366f1' },
+  { nome: 'Precipitação', desc: 'Quando as nuvens acumulam muita água, cai como chuva ou neve.', cor: '#0ea5e9' },
+  { nome: 'Infiltração', desc: 'A água percola o solo, alimenta lençóis freáticos e regressa aos rios.', cor: '#10b981' },
+];
+let faseAtual = 0, faseTimer = 0;
+
+// Partículas
+let gotas = [], vapor = [], chuva = [], infil = [];
+
+function resize() {
+  W = cv.width = window.innerWidth;
+  H = cv.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Inicializar partículas
+for (let i = 0; i < 18; i++) vapor.push({ x: W*.15+Math.random()*W*.3, y: H*.72-Math.random()*40, vy: -(0.3+Math.random()*.5), vx: (Math.random()-.5)*.3, a: Math.random(), r: 3+Math.random()*4 });
+for (let i = 0; i < 20; i++) chuva.push({ x: W*.4+Math.random()*W*.45, y: -Math.random()*H, vy: 3+Math.random()*3, a: 1 });
+for (let i = 0; i < 14; i++) infil.push({ x: W*.12+Math.random()*W*.3, y: H*.78+Math.random()*30, vy: 0.5+Math.random()*.5, a: 1, r: 2+Math.random()*3 });
+
+// Nuvem
+function drawCloud(x, y, s, alpha) {
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.fillStyle = '#fff';
+  const b = [[0,0,s*1.2],[s*.7,-s*.3,s*.9],[s*1.5,-s*.1,s*.8],[s*2.2,0,s*.9],[s*2.8,-s*.2,s],[s*3.5,0,s*.85]];
+  b.forEach(([dx,dy,r]) => { ctx.beginPath(); ctx.arc(x+dx,y+dy,r,0,Math.PI*2); ctx.fill(); });
+  ctx.restore();
+}
+
+function drawMountain(x, h, col) {
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.moveTo(x,H*.82); ctx.lineTo(x+W*.1,H*.82-h); ctx.lineTo(x+W*.2,H*.82); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.moveTo(x+W*.1,H*.82-h); ctx.lineTo(x+W*.09,H*.82-h+h*.2); ctx.lineTo(x+W*.11,H*.82-h+h*.2); ctx.fill();
+}
+
+function draw() {
+  ctx.clearRect(0,0,W,H);
+
+  // Céu gradiente
+  const sky = ctx.createLinearGradient(0,0,0,H*.75);
+  sky.addColorStop(0,'#bfdbfe'); sky.addColorStop(1,'#e0f2fe');
+  ctx.fillStyle = sky; ctx.fillRect(0,0,W,H*.75);
+
+  // Sol
+  const sunGlow = ctx.createRadialGradient(W*.88,H*.12,5,W*.88,H*.12,60);
+  sunGlow.addColorStop(0,'rgba(251,191,36,.9)'); sunGlow.addColorStop(1,'rgba(251,191,36,0)');
+  ctx.fillStyle = sunGlow; ctx.fillRect(0,0,W,H*.5);
+  ctx.fillStyle='#fbbf24'; ctx.beginPath(); ctx.arc(W*.88,H*.12,28,0,Math.PI*2); ctx.fill();
+
+  // Raios
+  ctx.strokeStyle='rgba(251,191,36,.5)'; ctx.lineWidth=2;
+  for (let i=0;i<8;i++) {
+    const a=i*Math.PI/4+t*.01;
+    ctx.beginPath(); ctx.moveTo(W*.88+Math.cos(a)*32,H*.12+Math.sin(a)*32);
+    ctx.lineTo(W*.88+Math.cos(a)*48,H*.12+Math.sin(a)*48); ctx.stroke();
+  }
+
+  // Montanhas
+  drawMountain(W*.55, H*.22, '#64748b');
+  drawMountain(W*.65, H*.18, '#475569');
+
+  // Chão / terra
+  const terra = ctx.createLinearGradient(0,H*.82,0,H);
+  terra.addColorStop(0,'#6b7280'); terra.addColorStop(.3,'#4b5563'); terra.addColorStop(1,'#1f2937');
+  ctx.fillStyle=terra; ctx.fillRect(0,H*.82,W,H*.18);
+
+  // Vegetação
+  ctx.fillStyle='#16a34a';
+  ctx.fillRect(0,H*.8,W*.22,12); ctx.fillRect(W*.78,H*.8,W*.22,12);
+
+  // Oceano
+  const ocean = ctx.createLinearGradient(0,H*.72,0,H*.82);
+  ocean.addColorStop(0,'#0ea5e9'); ocean.addColorStop(1,'#0369a1');
+  ctx.fillStyle=ocean;
+  ctx.beginPath(); ctx.moveTo(0,H*.75);
+  ctx.quadraticCurveTo(W*.1,H*.73+Math.sin(t*.03)*4,W*.22,H*.75);
+  ctx.lineTo(W*.22,H*.82); ctx.lineTo(0,H*.82); ctx.fill();
+
+  // Rio
+  ctx.fillStyle='#38bdf8';
+  ctx.beginPath(); ctx.moveTo(W*.55,H*.82);
+  ctx.quadraticCurveTo(W*.45,H*.8,W*.32,H*.78);
+  ctx.quadraticCurveTo(W*.25,H*.77,W*.22,H*.75);
+  ctx.lineTo(W*.22,H*.78);
+  ctx.quadraticCurveTo(W*.25,H*.8,W*.32,H*.81);
+  ctx.quadraticCurveTo(W*.45,H*.83,W*.55,H*.84); ctx.fill();
+
+  // Nuvens
+  const nc = faseAtual===1?1:.6;
+  drawCloud(W*.3,H*.2,22,nc);
+  drawCloud(W*.52,H*.15,18,.7);
+
+  // Lençol freático
+  if (faseAtual===3) {
+    ctx.fillStyle='rgba(56,189,248,.25)';
+    ctx.fillRect(W*.08,H*.9,W*.36,14);
+    ctx.strokeStyle='#38bdf8'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.strokeRect(W*.08,H*.9,W*.36,14); ctx.setLineDash([]);
+    ctx.fillStyle='#38bdf8'; ctx.font='11px Segoe UI'; ctx.fillText('lençol freático',W*.1,H*.915);
+  }
+
+  // === FASE PARTÍCULAS ===
+
+  // Vapor (evaporação)
+  vapor.forEach(v => {
+    ctx.save(); ctx.globalAlpha = faseAtual===0 ? Math.abs(Math.sin(v.a+t*.02))*.7 : .15;
+    ctx.fillStyle='#7dd3fc';
+    ctx.beginPath(); ctx.arc(v.x,v.y,v.r,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+
+  // Gotículas subindo (condensação)
+  if (faseAtual===1) {
+    for (let i=0;i<6;i++) {
+      const gx = W*.05+Math.sin(t*.04+i)*W*.08;
+      const gy = H*.72 - ((t*1.2+i*50)%H*.55);
+      ctx.save(); ctx.globalAlpha=.5;
+      ctx.fillStyle='#bae6fd';
+      ctx.beginPath(); ctx.arc(gx,gy,3,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // Chuva (precipitação)
+  chuva.forEach(g => {
+    ctx.save(); ctx.globalAlpha = faseAtual===2?.75:.1;
+    ctx.strokeStyle='#0ea5e9'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(g.x,g.y); ctx.lineTo(g.x-2,g.y+12); ctx.stroke();
+    ctx.restore();
+  });
+
+  // Infiltração
+  if (faseAtual===3) {
+    infil.forEach(p => {
+      const py = H*.82 + ((t*.8+p.y)%(H*.1));
+      ctx.save(); ctx.globalAlpha=.6;
+      ctx.fillStyle='#38bdf8';
+      ctx.beginPath(); ctx.arc(p.x,py,p.r,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  // Seta de ciclo
+  ctx.save(); ctx.globalAlpha=.2; ctx.strokeStyle='#2563eb'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+  ctx.beginPath(); ctx.ellipse(W*.5,H*.5,W*.38,H*.28,0,Math.PI*.1,Math.PI*1.9);
+  ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+
+  // Legenda da fase atual
+  const f = fases[faseAtual];
+  ctx.save();
+  ctx.fillStyle=f.cor; ctx.globalAlpha=.15;
+  ctx.beginPath(); ctx.arc(W*.5,H*.5,Math.min(W,H)*.45,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function update() {
+  if (!paused) {
+    t++;
+    faseTimer++;
+    if (faseTimer > 220) {
+      faseTimer = 0;
+      faseAtual = (faseAtual+1)%4;
+      document.getElementById('fase').textContent = fases[faseAtual].nome;
+      document.getElementById('desc').textContent = fases[faseAtual].desc;
+      document.getElementById('fase').style.color = fases[faseAtual].cor;
+      vapor.forEach(v => { v.x = W*.02+Math.random()*W*.25; v.y = H*.72-Math.random()*40; });
+      chuva.forEach(g => { g.x = W*.35+Math.random()*W*.55; g.y = -Math.random()*H*.4; });
+    }
+    vapor.forEach(v => { v.x += v.vx+Math.sin(t*.02)*.3; v.y += v.vy; if(v.y<H*.15){v.y=H*.72;} });
+    chuva.forEach(g => { g.y += g.vy; if(g.y>H*.82){g.y=-10; g.x=W*.35+Math.random()*W*.55;} });
+  }
+  draw();
+  requestAnimationFrame(update);
+}
+
+document.getElementById('btnPausa').addEventListener('click', () => {
+  paused = !paused;
+  document.getElementById('btnPausa').textContent = paused ? '▶ Retomar' : '⏸ Pausar';
+});
+
+update();
+</script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Segoe UI',sans-serif; background:#1e293b; min-height:100vh; padding:16px; }
+h1 { text-align:center; color:#f8fafc; font-size:1.1rem; margin-bottom:4px; }
+.sub { text-align:center; color:#94a3b8; font-size:.78rem; margin-bottom:16px; }
+.cats { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:16px; }
+.cat-btn { padding:7px 16px; border-radius:20px; border:2px solid transparent; font-size:.82rem; font-weight:700; cursor:pointer; transition:all .2s; }
+.cat-btn.ativo { transform:scale(1.05); }
+.grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; max-width:500px; margin:0 auto 16px; }
+.cell { background:#fff; border-radius:14px; padding:14px 8px; text-align:center; cursor:pointer; transition:all .18s; box-shadow:0 2px 8px rgba(0,0,0,.2); border:3px solid transparent; }
+.cell:hover { transform:scale(1.06); box-shadow:0 6px 20px rgba(0,0,0,.3); }
+.cell:active { transform:scale(.96); }
+.cell .emoji { font-size:2.4rem; display:block; margin-bottom:6px; }
+.cell .label { font-size:.82rem; font-weight:700; color:#1e293b; line-height:1.2; }
+.frase-bar { max-width:500px; margin:0 auto; background:#0f172a; border-radius:14px; padding:12px 16px; display:flex; align-items:center; gap:10px; }
+.frase-txt { flex:1; color:#f8fafc; font-size:1rem; font-weight:600; min-height:28px; }
+.frase-txt.vazio { color:#475569; font-style:italic; font-weight:400; }
+.btn-falar { background:#10b981; border:none; border-radius:10px; padding:8px 16px; color:#fff; font-weight:700; font-size:.85rem; cursor:pointer; transition:background .2s; white-space:nowrap; }
+.btn-falar:hover { background:#059669; }
+.btn-limpar { background:#374151; border:none; border-radius:10px; padding:8px 12px; color:#94a3b8; font-size:.85rem; cursor:pointer; }
+.btn-limpar:hover { background:#4b5563; color:#fff; }
+.speaking .cell { animation: pulse .5s infinite alternate; }
+@keyframes pulse { from{box-shadow:0 0 0 0 rgba(16,185,129,0)} to{box-shadow:0 0 0 6px rgba(16,185,129,.4)} }
+</style>
+</head>
+<body>
+<h1>🗣️ Prancha de Comunicação</h1>
+<div class="sub">Clica numa célula para falar · Constrói frases no painel abaixo</div>
+
+<div class="cats" id="cats"></div>
+<div class="grid" id="grid"></div>
+
+<div class="frase-bar">
+  <div class="frase-txt vazio" id="frase-txt">A minha frase aparece aqui…</div>
+  <button class="btn-falar" onclick="falarFrase()">▶ Falar frase</button>
+  <button class="btn-limpar" onclick="limparFrase()">✕</button>
+</div>
+
+<script>
+const categorias = {
+  "😊 Sentimentos": {
+    cor:"#f59e0b", fundo:"#fef3c7",
+    itens:[
+      {e:"😊",t:"Estou bem"},{e:"😢",t:"Estou triste"},{e:"😠",t:"Estou zangado"},
+      {e:"😨",t:"Tenho medo"},{e:"😄",t:"Estou feliz"},{e:"🤒",t:"Não me sinto bem"}
+    ]
+  },
+  "🙋 Necessidades": {
+    cor:"#0ea5e9", fundo:"#e0f2fe",
+    itens:[
+      {e:"💧",t:"Tenho sede"},{e:"🍽️",t:"Tenho fome"},{e:"🚽",t:"Preciso da casa de banho"},
+      {e:"😴",t:"Tenho sono"},{e:"🤕",t:"Tenho dores"},{e:"🆘",t:"Preciso de ajuda"}
+    ]
+  },
+  "📚 Sala de Aula": {
+    cor:"#8b5cf6", fundo:"#ede9fe",
+    itens:[
+      {e:"✋",t:"Quero falar"},{e:"❓",t:"Não percebi"},{e:"✅",t:"Percebi"},
+      {e:"📖",t:"Quero ler"},{e:"✏️",t:"Quero escrever"},{e:"🔁",t:"Repete por favor"}
+    ]
+  },
+  "🍽️ Refeições": {
+    cor:"#10b981", fundo:"#d1fae5",
+    itens:[
+      {e:"🥛",t:"Quero leite"},{e:"🍞",t:"Quero pão"},{e:"🍎",t:"Quero fruta"},
+      {e:"🥗",t:"Quero salada"},{e:"🍪",t:"Quero bolacha"},{e:"🚫",t:"Não gosto"}
+    ]
+  }
+};
+
+let catAtual = Object.keys(categorias)[0];
+let frase = [];
+
+function renderCats() {
+  const el = document.getElementById('cats');
+  el.innerHTML = '';
+  Object.keys(categorias).forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn' + (c===catAtual?' ativo':'');
+    btn.textContent = c;
+    const {cor} = categorias[c];
+    btn.style.background = c===catAtual ? cor : '#334155';
+    btn.style.color = c===catAtual ? '#fff' : '#94a3b8';
+    btn.style.borderColor = c===catAtual ? cor : 'transparent';
+    btn.onclick = () => { catAtual=c; renderCats(); renderGrid(); };
+    el.appendChild(btn);
+  });
+}
+
+function renderGrid() {
+  const el = document.getElementById('grid');
+  const {itens, fundo, cor} = categorias[catAtual];
+  el.innerHTML = '';
+  itens.forEach(item => {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.style.background = fundo;
+    cell.style.borderColor = 'transparent';
+    cell.innerHTML = `<span class="emoji">${item.e}</span><span class="label">${item.t}</span>`;
+    cell.onclick = () => falar(item, cell, cor);
+    el.appendChild(cell);
+  });
+}
+
+function falar(item, cell, cor) {
+  // Adicionar à frase
+  frase.push(item.t);
+  const ft = document.getElementById('frase-txt');
+  ft.textContent = frase.join(' · ');
+  ft.classList.remove('vazio');
+
+  // Falar célula
+  cell.style.borderColor = cor;
+  cell.style.transform = 'scale(1.08)';
+  setTimeout(()=>{ cell.style.borderColor='transparent'; cell.style.transform=''; }, 400);
+
+  const utter = new SpeechSynthesisUtterance(item.t);
+  utter.lang = 'pt-PT'; utter.rate = 0.9; utter.pitch = 1.1;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
+}
+
+function falarFrase() {
+  if (!frase.length) return;
+  const utter = new SpeechSynthesisUtterance(frase.join('. '));
+  utter.lang = 'pt-PT'; utter.rate = 0.85; utter.pitch = 1.0;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
+}
+
+function limparFrase() {
+  frase = [];
+  const ft = document.getElementById('frase-txt');
+  ft.textContent = 'A minha frase aparece aqui…';
+  ft.classList.add('vazio');
+}
+
+renderCats();
+renderGrid();
+</script>
+</body>
+</html>

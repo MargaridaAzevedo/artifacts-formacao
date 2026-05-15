@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Segoe UI',sans-serif; background:#f8fafc; padding:20px; }
+.topo { text-align:center; margin-bottom:20px; }
+.topo h1 { font-size:1.1rem; color:#1e293b; margin-bottom:12px; }
+.tabs { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.tab { padding:9px 22px; border-radius:20px; border:2px solid #e2e8f0; font-size:.88rem; font-weight:700; cursor:pointer; transition:all .2s; background:#fff; color:#64748b; }
+.tab.A.ativo { background:#0ea5e9; border-color:#0ea5e9; color:#fff; }
+.tab.B.ativo { background:#8b5cf6; border-color:#8b5cf6; color:#fff; }
+.tab.C.ativo { background:#f59e0b; border-color:#f59e0b; color:#fff; }
+.tab:hover:not(.ativo) { border-color:#94a3b8; color:#334155; }
+.badge-lei { font-size:.7rem; font-weight:600; padding:2px 8px; border-radius:99px; margin-left:6px; vertical-align:middle; }
+.badge-A { background:#e0f2fe; color:#0369a1; }
+.badge-B { background:#ede9fe; color:#7c3aed; }
+.badge-C { background:#fef3c7; color:#b45309; }
+.ficha { display:none; max-width:680px; margin:0 auto; }
+.ficha.ativa { display:block; }
+.ficha-card { background:#fff; border-radius:16px; padding:28px; box-shadow:0 2px 12px rgba(0,0,0,.07); }
+.ficha-header { display:flex; align-items:center; gap:12px; margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #f1f5f9; }
+.ficha-icon { font-size:2rem; }
+.ficha-titulo { font-size:1.05rem; font-weight:800; }
+.ficha-sub { font-size:.78rem; color:#64748b; margin-top:2px; }
+.secao { margin-bottom:22px; }
+.secao-titulo { font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#94a3b8; margin-bottom:10px; }
+.pergunta { margin-bottom:14px; padding:14px; background:#f8fafc; border-radius:10px; border-left:3px solid #e2e8f0; }
+.pergunta p { font-size:.92rem; color:#1e293b; line-height:1.6; margin-bottom:8px; }
+.linha { border:none; border-bottom:1px solid #cbd5e1; height:22px; width:100%; margin-bottom:6px; display:block; }
+.opcao-check { display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:.9rem; color:#334155; }
+.opcao-check input { width:16px; height:16px; accent-color:#0ea5e9; }
+.passo { display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }
+.passo-num { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.78rem; flex-shrink:0; color:#fff; }
+.passo p { font-size:.88rem; color:#1e293b; line-height:1.5; padding-top:2px; }
+.pictograma { border:2px dashed #fcd34d; border-radius:10px; width:80px; height:80px; display:flex; align-items:center; justify-content:center; font-size:.65rem; color:#92400e; text-align:center; flex-shrink:0; }
+.nota-lei { font-size:.72rem; color:#94a3b8; text-align:right; margin-top:16px; font-style:italic; }
+/* cores por versão */
+.A .ficha-titulo { color:#0369a1; }
+.A .pergunta { border-left-color:#0ea5e9; }
+.A .passo-num { background:#0ea5e9; }
+.B .ficha-titulo { color:#7c3aed; }
+.B .pergunta { border-left-color:#8b5cf6; }
+.B .passo-num { background:#8b5cf6; }
+.C .ficha-titulo { color:#b45309; }
+.C .pergunta { border-left-color:#f59e0b; }
+.C .passo-num { background:#f59e0b; }
+</style>
+</head>
+<body>
+<div class="topo">
+  <h1>🌊 Estudo do Meio — O Ciclo da Água · 4.º ano</h1>
+  <div class="tabs">
+    <button class="tab A ativo" onclick="mostrar('A',this)">Versão A <span class="badge-lei badge-A">Currículo regular</span></button>
+    <button class="tab B" onclick="mostrar('B',this)">Versão B <span class="badge-lei badge-B">Art.º 9.º alínea b)</span></button>
+    <button class="tab C" onclick="mostrar('C',this)">Versão C <span class="badge-lei badge-C">Adap. significativas</span></button>
+  </div>
+</div>
+
+<!-- VERSÃO A -->
+<div class="ficha A ativa" id="fichaA">
+<div class="ficha-card A">
+  <div class="ficha-header">
+    <span class="ficha-icon">📘</span>
+    <div><div class="ficha-titulo">Ficha de Trabalho — Currículo Regular</div>
+    <div class="ficha-sub">Nome: _________________ · Turma: ____ · Data: __________</div></div>
+  </div>
+
+  <div class="secao">
+    <div class="secao-titulo">1. Compreensão</div>
+    <div class="pergunta">
+      <p>1.1 — Define, com as tuas palavras, o que é o ciclo da água.</p>
+      <span class="linha"></span><span class="linha"></span><span class="linha"></span>
+    </div>
+    <div class="pergunta">
+      <p>1.2 — Indica as quatro fases principais do ciclo da água e descreve o que acontece em cada uma delas.</p>
+      <span class="linha"></span><span class="linha"></span><span class="linha"></span><span class="linha"></span>
+    </div>
+  </div>
+
+  <div class="secao">
+    <div class="secao-titulo">2. Aplicação</div>
+    <div class="pergunta">
+      <p>2.1 — Explica por que razão o ciclo da água é fundamental para a vida na Terra.</p>
+      <span class="linha"></span><span class="linha"></span>
+    </div>
+    <div class="pergunta">
+      <p>2.2 — Num dia de verão muito quente, a água de uma poça desaparece ao fim de algumas horas. Que processo do ciclo da água explica este fenómeno? Justifica.</p>
+      <span class="linha"></span><span class="linha"></span><span class="linha"></span>
+    </div>
+  </div>
+
+  <div class="secao">
+    <div class="secao-titulo">3. Análise crítica</div>
+    <div class="pergunta">
+      <p>3.1 — De que forma as atividades humanas podem interferir no ciclo da água? Dá dois exemplos concretos.</p>
+      <span class="linha"></span><span class="linha"></span><span class="linha"></span>
+    </div>
+  </div>
+  <div class="nota-lei">Currículo regular — Aprendizagens Essenciais, Estudo do Meio, 4.º ano</div>
+</div>
+</div>
+
+<!-- VERSÃO B -->
+<div class="ficha B" id="fichaB">
+<div class="ficha-card B">
+  <div class="ficha-header">
+    <span class="ficha-icon">📗</span>
+    <div><div class="ficha-titulo">Ficha de Trabalho — Adaptações Não Significativas</div>
+    <div class="ficha-sub">Nome: _________________ · Turma: ____ · Data: __________</div></div>
+  </div>
+
+  <div class="secao">
+    <div class="secao-titulo">1. O que é o ciclo da água?</div>
+    <div class="pergunta">
+      <p>🌧 O ciclo da água é o movimento contínuo da água na Terra.<br>A água passa pelo ar, pelo solo e pelos rios.</p>
+      <p style="margin-top:10px">1.1 — Completa a frase:</p>
+      <p>O ciclo da água é importante porque _____________________________.</p>
+      <span class="linha"></span>
+    </div>
+  </div>
+
+  <div class="secao">
+    <div class="secao-titulo">2. As fases do ciclo — escolhe a resposta certa</div>
+    <div class="pergunta">
+      <p>2.1 — Quando o sol aquece a água dos rios, ela transforma-se em vapor. Este processo chama-se:</p>
+      <label class="opcao-check"><input type="radio" name="q1"> Condensação</label>
+      <label class="opcao-check"><input type="radio" name="q1"> Evaporação ✅</label>
+      <label class="opcao-check"><input type="radio" name="q1"> Precipitação</label>
+    </div>
+    <div class="pergunta">
+      <p>2.2 — A chuva e a neve são exemplos de:</p>
+      <label class="opcao-check"><input type="radio" name="q2"> Infiltração</label>
+      <label class="opcao-check"><input type="radio" name="q2"> Evaporação</label>
+      <label class="opcao-check"><input type="radio" name="q2"> Precipitação ✅</label>
+    </div>
+  </div>
+
+  <div class="secao">
+    <div class="secao-titulo">3. Responde com uma frase curta</div>
+    <div class="pergunta">
+      <p>3.1 — Por que é importante o ciclo da água para os seres vivos?</p>
+      <span class="linha"></span><span class="linha"></span>
+    </div>
+    <div class="pergunta">
+      <p>3.2 — O que podes fazer no dia a dia para não desperdiçar água?</p>
+      <span class="linha"></span><span class="linha"></span>
+    </div>
+  </div>
+  <div class="nota-lei">Adaptações curriculares não significativas — art.º 9.º, alínea b), DL 54/2018</div>
+</div>
+</div>
+
+<!-- VERSÃO C -->
+<div class="ficha C" id="fichaC">
+<div class="ficha-card C">
+  <div class="ficha-header">
+    <span class="ficha-icon">📙</span>
+    <div><div class="ficha-titulo">Ficha de Trabalho — Adaptações Significativas</div>
+    <div class="ficha-sub">Nome: _________________ · Turma: ____ · Data: __________</div></div>
+  </div>
+
+  <div class="secao">
+    <div class="secao-titulo">Tarefa 1 — A água move-se</div>
+    <div class="pergunta">
+      <div class="passo">
+        <span class="passo-num">1</span>
+        <div style="display:flex;gap:12px;align-items:flex-start;flex:1">
+          <div class="pictograma">☀️<br><small>imagem sol</small></div>
+          <div><p><strong>O sol aquece a água.</strong><br>A água torna-se vapor.</p>
+          <p style="margin-top:8px">Isto chama-se:<br><strong>EVAPORAÇÃO</strong></p></div>
+        </div>
+      </div>
+      <p style="font-size:.85rem;color:#334155;margin-top:8px">✏️ Copia a palavra: <span class="linha" style="width:140px;display:inline-block"></span></p>
+    </div>
+
+    <div class="pergunta">
+      <div class="passo">
+        <span class="passo-num">2</span>
+        <div style="display:flex;gap:12px;align-items:flex-start;flex:1">
+          <div class="pictograma">☁️<br><small>imagem nuvem</small></div>
+          <div><p><strong>O vapor sobe.</strong><br>Forma nuvens.</p>
+          <p style="margin-top:8px">Isto chama-se:<br><strong>CONDENSAÇÃO</strong></p></div>
+        </div>
+      </div>
+      <p style="font-size:.85rem;color:#334155;margin-top:8px">✏️ Copia a palavra: <span class="linha" style="width:140px;display:inline-block"></span></p>
+    </div>
+  </div>
+
+  <div class="secao">
+    <div class="secao-titulo">Tarefa 2 — Escolhe a imagem certa</div>
+    <div class="pergunta">
+      <p>A chuva que cai das nuvens chama-se <strong>PRECIPITAÇÃO</strong>.</p>
+      <p style="margin-top:10px">Rodeia o que é precipitação:</p>
+      <div style="display:flex;gap:16px;margin-top:10px">
+        <div style="text-align:center"><span style="font-size:2rem">🌧️</span><br><small>Chuva</small></div>
+        <div style="text-align:center"><span style="font-size:2rem">🌞</span><br><small>Sol</small></div>
+        <div style="text-align:center"><span style="font-size:2rem">🏠</span><br><small>Casa</small></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="secao">
+    <div class="secao-titulo">Tarefa 3 — Liga com uma linha</div>
+    <div class="pergunta" style="display:flex;gap:20px;justify-content:space-around">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:.88rem;font-weight:700">☀️ Evaporação</span>
+        <span style="font-size:.88rem;font-weight:700">☁️ Condensação</span>
+        <span style="font-size:.88rem;font-weight:700">🌧️ Precipitação</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;text-align:right">
+        <span style="font-size:.82rem">A água cai do céu</span>
+        <span style="font-size:.82rem">A água sobe como vapor</span>
+        <span style="font-size:.82rem">Formam-se as nuvens</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="nota-lei">Adaptações curriculares significativas — art.º 9.º, alínea d), DL 54/2018 · Frases ≤ 10 palavras · Espaço para pictograma ARASAAC</div>
+</div>
+</div>
+
+<script>
+function mostrar(v, btn) {
+  document.querySelectorAll('.ficha').forEach(f=>f.classList.remove('ativa'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('ativo'));
+  document.getElementById('ficha'+v).classList.add('ativa');
+  btn.classList.add('ativo');
+}
+</script>
+</body>
+</html>
